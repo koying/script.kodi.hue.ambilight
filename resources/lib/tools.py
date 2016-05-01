@@ -36,9 +36,8 @@ def get_version():
     return "unknown"
 
 def register_user(hue_ip):
-  username = hashlib.md5(str(random.random())).hexdigest()
   device = "xbmc-player"
-  data = '{"username": "%s", "devicetype": "%s"}' % (username, device)
+  data = '{"devicetype": "%s"}' % device
 
   r = requests.post('http://%s/api' % hue_ip, data=data)
   response = r.text
@@ -48,6 +47,8 @@ def register_user(hue_ip):
     response = r.text 
     time.sleep(3)
 
+  j = r.json()
+  username = [0]["success"]["username"];
   return username
 
 class Light:
