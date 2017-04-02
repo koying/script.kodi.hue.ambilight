@@ -317,21 +317,20 @@ def run():
 
       if player.playingvideo: # only if there's actually video
         try:
-          if capture.waitForCaptureStateChangeEvent(200):
-            #we've got a capture event
-            if capture.getCaptureState() == xbmc.CAPTURE_STATE_DONE:
-              screen = Screenshot(capture.getImage(), capture.getWidth(), capture.getHeight())
-              hsvRatios = screen.spectrum_hsv(screen.pixels, screen.capture_width, screen.capture_height)
-              if hue.settings.light == 0:
-                fade_light_hsv(hue.light, hsvRatios[0])
-              else:
-                fade_light_hsv(hue.light[0], hsvRatios[0])
-                if hue.settings.light > 1:
-                  #xbmc.sleep(4) #why?
-                  fade_light_hsv(hue.light[1], hsvRatios[1])
-                if hue.settings.light > 2:
-                  #xbmc.sleep(4) #why?
-                  fade_light_hsv(hue.light[2], hsvRatios[2])
+          buf = capture.getImage(200)
+          if len(buf) > 0 and player.playingvideo:
+            screen = Screenshot(buf, capture.getWidth(), capture.getHeight())
+            hsvRatios = screen.spectrum_hsv(screen.pixels, screen.capture_width, screen.capture_height)
+            if hue.settings.light == 0:
+              fade_light_hsv(hue.light, hsvRatios[0])
+            else:
+              fade_light_hsv(hue.light[0], hsvRatios[0])
+              if hue.settings.light > 1:
+                #xbmc.sleep(4) #why?
+                fade_light_hsv(hue.light[1], hsvRatios[1])
+              if hue.settings.light > 2:
+                #xbmc.sleep(4) #why?
+                fade_light_hsv(hue.light[2], hsvRatios[2])
         except ZeroDivisionError:
           logger.debuglog("no frame. looping.")
 
@@ -422,7 +421,7 @@ def state_changed(state, duration):
       if capture_height == 0:
         capture_height = capture_width #fix for divide by zero.
       logger.debuglog("capture %s x %s" % (capture_width, capture_height))
-      capture.capture(int(capture_width), int(capture_height), xbmc.CAPTURE_FLAG_CONTINUOUS)
+      capture.capture(int(capture_width), int(capture_height))
 
   if (state == "started" and hue.pauseafterrefreshchange == 0) or state == "resumed":
     if hue.settings.mode == 0 and hue.settings.ambilight_dim: #if in ambilight mode and dimming is enabled
