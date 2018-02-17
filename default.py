@@ -65,7 +65,7 @@ class MyMonitor( xbmc.Monitor ):
     xbmc.Monitor.__init__( self )
 
   def onSettingsChanged( self ):
-    logger.debuglog("running in mode %s" % str(hue.settings.mode))
+    xbmc.log("running in mode %s" % str(hue.settings.mode))
     last = datetime.datetime.now()
     hue.settings.readxml()
     hue.update_settings()
@@ -99,7 +99,7 @@ class MyPlayer(xbmc.Player):
       credits_triggered = False
       if self.movie and self.duration != 0: #only try if its a movie and has a duration
         get_credits_info(self.getVideoInfoTag().getTitle(), self.duration) # TODO: start it on a timer to not block the beginning of the media
-        logger.debuglog("credits_time: %r" % credits_time)
+        xbmc.log("credits_time: %r" % credits_time)
         self.timer = RepeatedTimer(1, self.checkTime)
       state_changed("started", self.duration)
 
@@ -112,14 +112,14 @@ class MyPlayer(xbmc.Player):
       state_changed("paused", self.duration)
 
   def onPlayBackResumed(self):
-    logger.debuglog("playback resumed called on player")
+    xbmc.log("playback resumed called on player")
     if self.isPlayingVideo():
       self.playingvideo = True
       if self.duration == 0:
         self.duration = self.getTotalTime()
         if self.movie and self.duration != 0: #only try if its a movie and has a duration
           get_credits_info(self.getVideoInfoTag().getTitle(), self.duration) # TODO: start it on a timer to not block the beginning of the media
-          logger.debuglog("credits_time: %r" % credits_time)
+          xbmc.log("credits_time: %r" % credits_time)
       if self.movie and self.duration != 0:    
         self.timer = RepeatedTimer(1, self.checkTime)
       state_changed("resumed", self.duration)
@@ -227,7 +227,7 @@ class Screenshot:
     if colorCount > 1:
       # sort colors by popularity
       hsvRatios = sorted(hsvRatios, key=lambda hsvratio: hsvratio.ratio, reverse=True)
-      # logger.debuglog("hsvRatios %s" % hsvRatios)
+      # xbmc.log("hsvRatios %s" % hsvRatios)
       
       #return at least 3
       if colorCount == 2:
@@ -278,8 +278,8 @@ class Screenshot:
         if tmps > 0.33:
           h = int(tmph * 360)
 
-          # logger.debuglog("%s \t set pixel r %s \tg %s \tb %s" % (i, r, g, b))
-          # logger.debuglog("%s \t set pixel h %s \ts %s \tv %s" % (i, tmph*100, tmps*100, tmpv*100))
+          # xbmc.log("%s \t set pixel r %s \tg %s \tb %s" % (i, r, g, b))
+          # xbmc.log("%s \t set pixel h %s \ts %s \tv %s" % (i, tmph*100, tmps*100, tmpv*100))
 
           if spectrum.has_key(h):
             spectrum[h] += 1 # tmps * 2 * tmpv
@@ -304,7 +304,7 @@ def run():
 
   last = 0
 
-  #logger.debuglog("starting run loop!")
+  #xbmc.log("starting run loop!")
   while not monitor.abortRequested():
 
     waitTimeout = 1;
@@ -312,7 +312,7 @@ def run():
     if hue.settings.mode == 0: # ambilight mode
       waitTimeout = 0.1
       now = time.time()
-      logger.debuglog("run loop delta: %f (%f/sec)" % ((now-last), 1/(now-last)))
+      #xbmc.log("run loop delta: %f (%f/sec)" % ((now-last), 1/(now-last)))
       last = now
 
       if player.playingvideo: # only if there's actually video
@@ -332,7 +332,8 @@ def run():
                 #xbmc.sleep(4) #why?
                 fade_light_hsv(hue.light[2], hsvRatios[2])
         except ZeroDivisionError:
-          logger.debuglog("no frame. looping.")
+          #xbmc.log("no frame. looping.")
+          pass
 
     if monitor.waitForAbort(waitTimeout):
       break
@@ -350,27 +351,27 @@ def fade_light_hsv(light, hsvRatio):
   distance = math.sqrt(hvec**2 + svec**2 + vvec**2) #changed to squares for performance
   if distance > 0:
     duration = int(3 + 27 * distance/255)
-    # logger.debuglog("distance %s duration %s" % (distance, duration))
+    # xbmc.log("distance %s duration %s" % (distance, duration))
     light.set_light2(h, s, v, duration)
 
 credits_time = None #test = 10
 credits_triggered = False
 
 def get_credits_info(title, duration):
-  logger.debuglog("get_credits_info")
+  xbmc.log("get_credits_info")
   if hue.settings.undim_during_credits:
     #get credits time here
-    logger.debuglog("title: %r, duration: %r" % (title, duration))
+    xbmc.log("title: %r, duration: %r" % (title, duration))
     global credits_time
     credits_time = ChapterManager.CreditsStartTimeForMovie(title, duration)
-    logger.debuglog("set credits time to: %r" % credits_time)
+    xbmc.log("set credits time to: %r" % credits_time)
 
 def check_time(cur_time):
   global credits_triggered
-  #logger.debuglog("check_time: %r, undim: %r, credits_time: %r" % (cur_time, hue.settings.undim_during_credits, credits_time))
+  #xbmc.log("check_time: %r, undim: %r, credits_time: %r" % (cur_time, hue.settings.undim_during_credits, credits_time))
   if hue.settings.undim_during_credits and credits_time != None:
     if (cur_time >= credits_time + hue.settings.credits_delay_time) and not credits_triggered:
-      logger.debuglog("hit credits, turn on lights")
+      xbmc.log("hit credits, turn on lights")
       # do partial undim (if enabled, otherwise full undim)
       if hue.settings.mode == 0 and hue.settings.ambilight_dim:
         if hue.settings.ambilight_dim_light == 0:
@@ -386,14 +387,14 @@ def check_time(cur_time):
       credits_triggered = False
 
 def state_changed(state, duration):
-  logger.debuglog("state changed to: %s" % state)
+  xbmc.log("state changed to: %s" % state)
 
   if duration < hue.settings.misc_disableshort_threshold and hue.settings.misc_disableshort:
-    logger.debuglog("add-on disabled for short movies")
+    xbmc.log("add-on disabled for short movies")
     return
 
   if state == "started":
-    logger.debuglog("retrieving current setting before starting")
+    xbmc.log("retrieving current setting before starting")
     
     if hue.settings.light == 0: # group mode
       hue.light.get_current_setting()
@@ -416,16 +417,16 @@ def state_changed(state, duration):
           for l in hue.ambilight_dim_light:
             l.get_current_setting()
       #start capture when playback starts
-      capture_width = 32 #100
+      capture_width = 128
       capture_height = capture_width / capture.getAspectRatio()
       if capture_height == 0:
         capture_height = capture_width #fix for divide by zero.
-      logger.debuglog("capture %s x %s" % (capture_width, capture_height))
+      xbmc.log("capture %s x %s" % (capture_width, capture_height))
       capture.capture(int(capture_width), int(capture_height))
 
   if (state == "started" and hue.pauseafterrefreshchange == 0) or state == "resumed":
     if hue.settings.mode == 0 and hue.settings.ambilight_dim: #if in ambilight mode and dimming is enabled
-      logger.debuglog("dimming for ambilight")
+      xbmc.log("dimming for ambilight")
       if hue.settings.ambilight_dim_light == 0:
         hue.ambilight_dim_light.dim_light()
       elif hue.settings.ambilight_dim_light > 0:
@@ -461,7 +462,7 @@ if ( __name__ == "__main__" ):
     args = sys.argv[1]
   hue = Hue(settings, args)
   while not hue.connected and not monitor.abortRequested():
-    logger.debuglog("not connected")
+    xbmc.log("not connected")
     time.sleep(1)
   run()
   
